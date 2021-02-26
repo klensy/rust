@@ -85,7 +85,7 @@ jobs:
         if: success() && !env.SKIP_JOB
       - name: install awscli
         run: src/ci/scripts/install-awscli.sh
-        if: success() && !env.SKIP_JOB
+        if: "success() && !env.SKIP_JOB && github.event_name != 'pull_request'"
       - name: install sccache
         run: src/ci/scripts/install-sccache.sh
         if: success() && !env.SKIP_JOB
@@ -447,7 +447,7 @@ jobs:
         if: success() && !env.SKIP_JOB
       - name: install awscli
         run: src/ci/scripts/install-awscli.sh
-        if: success() && !env.SKIP_JOB
+        if: "success() && !env.SKIP_JOB && github.event_name != 'pull_request'"
       - name: install sccache
         run: src/ci/scripts/install-sccache.sh
         if: success() && !env.SKIP_JOB
@@ -554,7 +554,7 @@ jobs:
         if: success() && !env.SKIP_JOB
       - name: install awscli
         run: src/ci/scripts/install-awscli.sh
-        if: success() && !env.SKIP_JOB
+        if: "success() && !env.SKIP_JOB && github.event_name != 'pull_request'"
       - name: install sccache
         run: src/ci/scripts/install-sccache.sh
         if: success() && !env.SKIP_JOB

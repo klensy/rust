@@ -143,6 +143,8 @@ x--expand-yaml-anchors--remove:
 
       - name: install awscli
         run: src/ci/scripts/install-awscli.sh
+        # skip installing awscli on pull requests, as PR artifacts don't uploaded to S3
+        if: success() && !env.SKIP_JOB && github.event_name != 'pull_request'
         <<: *step
 
       - name: install sccache
