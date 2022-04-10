@@ -493,7 +493,7 @@ fn copy_all_cgu_workproducts_to_incr_comp_cache_dir(
         let path = module.object.as_ref().cloned();
 
         if let Some((id, product)) =
-            copy_cgu_workproduct_to_incr_comp_cache_dir(sess, module.name.as_str(), &path)
+            copy_cgu_workproduct_to_incr_comp_cache_dir(sess, module.name, &path)
         {
             work_products.insert(id, product);
         }

@@ -6,13 +6,14 @@ use crate::persist::fs::*;
 use rustc_fs_util::link_or_copy;
 use rustc_middle::dep_graph::{WorkProduct, WorkProductId};
 use rustc_session::Session;
+use rustc_span::Symbol;
 use std::fs as std_fs;
 use std::path::PathBuf;
 
 /// Copies a CGU work product to the incremental compilation directory, so next compilation can find and reuse it.
 pub fn copy_cgu_workproduct_to_incr_comp_cache_dir(
     sess: &Session,
-    cgu_name: &str,
+    cgu_name: Symbol,
     path: &Option<PathBuf>,
 ) -> Option<(WorkProductId, WorkProduct)> {
     debug!("copy_cgu_workproduct_to_incr_comp_cache_dir({:?},{:?})", cgu_name, path);
@@ -39,7 +40,7 @@ pub fn copy_cgu_workproduct_to_incr_comp_cache_dir(
 
     let work_product = WorkProduct { cgu_name: cgu_name.to_string(), saved_file };
 
-    let work_product_id = WorkProductId::from_cgu_name(cgu_name);
+    let work_product_id = WorkProductId::from_cgu_name(cgu_name.as_str());
     Some((work_product_id, work_product))
 }
 
