@@ -390,9 +390,13 @@ fn generate_lto_work<B: ExtraBackendMethods>(
             (WorkItem::LTO(module), cost)
         })
         .chain(copy_jobs.into_iter().map(|wp| {
-            // FIXME: remove interning later?
-            let cgu_name = Symbol::intern(&wp.cgu_name);
-            (WorkItem::CopyPostLtoArtifacts(CachedModuleCodegen { name: cgu_name, source: wp }), 0)
+            (
+                WorkItem::CopyPostLtoArtifacts(CachedModuleCodegen {
+                    name: wp.cgu_name,
+                    source: wp,
+                }),
+                0,
+            )
         }))
         .collect()
 }

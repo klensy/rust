@@ -8,6 +8,7 @@ use rustc_data_structures::steal::Steal;
 use rustc_data_structures::sync::{AtomicU32, AtomicU64, Lock, Lrc, Ordering};
 use rustc_index::vec::IndexVec;
 use rustc_serialize::opaque::{FileEncodeResult, FileEncoder};
+use rustc_span::Symbol;
 use smallvec::{smallvec, SmallVec};
 use std::assert_matches::assert_matches;
 use std::collections::hash_map::Entry;
@@ -885,7 +886,7 @@ impl<K: DepKind> DepGraph<K> {
 /// previous hash. If it matches up, we can reuse the object file.
 #[derive(Clone, Debug, Encodable, Decodable)]
 pub struct WorkProduct {
-    pub cgu_name: String,
+    pub cgu_name: Symbol,
     /// Saved file associated with this CGU.
     pub saved_file: Option<String>,
 }

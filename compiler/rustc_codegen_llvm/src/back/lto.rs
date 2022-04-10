@@ -230,7 +230,7 @@ fn fat_lto(
     let mut in_memory = Vec::new();
     serialized_modules.extend(cached_modules.into_iter().map(|(buffer, wp)| {
         info!("pushing cached module {:?}", wp.cgu_name);
-        (buffer, CString::new(wp.cgu_name).unwrap())
+        (buffer, CString::new(wp.cgu_name.as_str()).unwrap())
     }));
     for module in modules {
         match module {
@@ -337,8 +337,9 @@ fn fat_lto(
         let mut cu2 = ptr::null_mut();
         unsafe { llvm::LLVMRustLTOGetDICompileUnit(llmod, &mut cu1, &mut cu2) };
         if !cu2.is_null() {
-            let _timer =
-                cgcx.prof.generic_activity_with_arg("LLVM_fat_lto_patch_debuginfo", module.name.as_str());
+            let _timer = cgcx
+                .prof
+                .generic_activity_with_arg("LLVM_fat_lto_patch_debuginfo", module.name.as_str());
             unsafe { llvm::LLVMRustLTOPatchDICompileUnit(llmod, cu1) };
             save_temp_bitcode(cgcx, &module, "fat-lto-after-patch");
         }
@@ -430,8 +431,11 @@ fn thin_lto(
     unsafe {
         info!("going for that thin, thin LTO");
 
-        let green_modules: FxHashMap<_, _> =
-            cached_modules.iter().map(|&(_, ref wp)| (wp.cgu_name.clone(), wp.clone())).collect();
+        //FIXME: don't alloc string?
+        let green_modules: FxHashMap<_, _> = cached_modules
+            .iter()
+            .map(|&(_, ref wp)| (wp.cgu_name.to_string(), wp.clone()))
+            .collect();
 
         let full_scope_len = modules.len() + serialized_modules.len() + cached_modules.len();
         let mut thin_buffers = Vec::with_capacity(modules.len());
@@ -468,8 +472,9 @@ fn thin_lto(
         //        we must always unconditionally look at the index).
         let mut serialized = Vec::with_capacity(serialized_modules.len() + cached_modules.len());
 
-        let cached_modules =
-            cached_modules.into_iter().map(|(sm, wp)| (sm, CString::new(wp.cgu_name).unwrap()));
+        let cached_modules = cached_modules
+            .into_iter()
+            .map(|(sm, wp)| (sm, CString::new(wp.cgu_name.as_str()).unwrap()));
 
         for (module, name) in serialized_modules.into_iter().chain(cached_modules) {
             info!("upstream or cached module {:?}", name);
@@ -584,7 +589,8 @@ pub(crate) fn run_pass_manager(
     config: &ModuleConfig,
     thin: bool,
 ) -> Result<(), FatalError> {
-    let _timer = cgcx.prof.extra_verbose_generic_activity("LLVM_lto_optimize", module.name.as_str());
+    let _timer =
+        cgcx.prof.extra_verbose_generic_activity("LLVM_lto_optimize", module.name.as_str());
 
     // Now we have one massive module inside of llmod. Time to run the
     // LTO-specific optimization passes that LLVM provides.
