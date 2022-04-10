@@ -31,7 +31,7 @@ use rustc_session::config::{Passes, SwitchWithOptPath};
 use rustc_session::Session;
 use rustc_span::source_map::SourceMap;
 use rustc_span::symbol::sym;
-use rustc_span::{BytePos, FileName, InnerSpan, Pos, Span};
+use rustc_span::{BytePos, FileName, InnerSpan, Pos, Span, Symbol};
 use rustc_target::spec::{MergeFunctions, SanitizerSet};
 
 use std::any::Any;
@@ -391,7 +391,7 @@ fn generate_lto_work<B: ExtraBackendMethods>(
         })
         .chain(copy_jobs.into_iter().map(|wp| {
             // FIXME: remove interning later?
-            let cgu_name = rustc_span::Symbol::intern(&wp.cgu_name);
+            let cgu_name = Symbol::intern(&wp.cgu_name);
             (WorkItem::CopyPostLtoArtifacts(CachedModuleCodegen { name: cgu_name, source: wp }), 0)
         }))
         .collect()
@@ -815,7 +815,7 @@ fn execute_optimize_work_item<B: ExtraBackendMethods>(
     // If we're doing some form of incremental LTO then we need to be sure to
     // save our module to disk first.
     let bitcode = if cgcx.config(module.kind).emit_pre_lto_bc {
-        let filename = pre_lto_bitcode_filename(module.name.as_str());
+        let filename = pre_lto_bitcode_filename(module.name);
         cgcx.incr_comp_session_dir.as_ref().map(|path| path.join(&filename))
     } else {
         None
@@ -1933,7 +1933,7 @@ pub fn submit_pre_lto_module_to_llvm<B: ExtraBackendMethods>(
     tx_to_llvm_workers: &Sender<Box<dyn Any + Send>>,
     module: CachedModuleCodegen,
 ) {
-    let filename = pre_lto_bitcode_filename(module.name.as_str());
+    let filename = pre_lto_bitcode_filename(module.name);
     let bc_path = in_incr_comp_dir_sess(tcx.sess, &filename);
     let file = fs::File::open(&bc_path)
         .unwrap_or_else(|e| panic!("failed to open bitcode file `{}`: {}", bc_path.display(), e));
@@ -1950,7 +1950,7 @@ pub fn submit_pre_lto_module_to_llvm<B: ExtraBackendMethods>(
     })));
 }
 
-pub fn pre_lto_bitcode_filename(module_name: &str) -> String {
+pub fn pre_lto_bitcode_filename(module_name: Symbol) -> String {
     format!("{}.{}", module_name, PRE_LTO_BC_EXT)
 }
 
