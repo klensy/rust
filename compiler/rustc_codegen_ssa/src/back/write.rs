@@ -493,7 +493,7 @@ fn copy_all_cgu_workproducts_to_incr_comp_cache_dir(
         let path = module.object.as_ref().cloned();
 
         if let Some((id, product)) =
-            copy_cgu_workproduct_to_incr_comp_cache_dir(sess, &module.name, &path)
+            copy_cgu_workproduct_to_incr_comp_cache_dir(sess, module.name.as_str(), &path)
         {
             work_products.insert(id, product);
         }
@@ -521,7 +521,7 @@ fn produce_final_output_artifacts(
         if compiled_modules.modules.len() == 1 {
             // 1) Only one codegen unit.  In this case it's no difficulty
             //    to copy `foo.0.x` to `foo.x`.
-            let module_name = Some(&compiled_modules.modules[0].name[..]);
+            let module_name = Some(compiled_modules.modules[0].name.as_str());
             let path = crate_output.temp_path(output_type, module_name);
             copy_gracefully(&path, &crate_output.path(output_type));
             if !sess.opts.cg.save_temps && !keep_numbered {
@@ -877,7 +877,7 @@ fn execute_copy_from_cache_work_item<B: ExtraBackendMethods>(
     assert_eq!(object.is_some(), module_config.emit_obj != EmitObj::None);
 
     WorkItemResult::Compiled(CompiledModule {
-        name: module.name.to_string(),
+        name: module.name,
         kind: ModuleKind::Regular,
         object,
         dwarf_object: None,
@@ -1531,7 +1531,7 @@ fn start_executing_work<B: ExtraBackendMethods>(
         // Regardless of what order these modules completed in, report them to
         // the backend in the same order every time to ensure that we're handing
         // out deterministic results.
-        compiled_modules.sort_by(|a, b| a.name.cmp(&b.name));
+        compiled_modules.sort_by(|a, b| a.name.as_str().cmp(&b.name.as_str()));
 
         Ok(CompiledModules {
             modules: compiled_modules,

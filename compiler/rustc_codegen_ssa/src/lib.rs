@@ -75,13 +75,15 @@ impl<M> ModuleCodegen<M> {
         let dwarf_object = emit_dwarf_obj.then(|| outputs.temp_path_dwo(Some(&self.name)));
         let bytecode = emit_bc.then(|| outputs.temp_path(OutputType::Bitcode, Some(&self.name)));
 
-        CompiledModule { name: self.name.clone(), kind: self.kind, object, dwarf_object, bytecode }
+        //FIXME: remove interning?
+        let cgu_name = Symbol::intern(&self.name);
+        CompiledModule { name: cgu_name, kind: self.kind, object, dwarf_object, bytecode }
     }
 }
 
 #[derive(Debug, Encodable, Decodable)]
 pub struct CompiledModule {
-    pub name: String,
+    pub name: Symbol,
     pub kind: ModuleKind,
     pub object: Option<PathBuf>,
     pub dwarf_object: Option<PathBuf>,

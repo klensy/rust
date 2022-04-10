@@ -524,10 +524,11 @@ pub fn codegen_crate<B: ExtraBackendMethods>(
     let metadata_module = if need_metadata_module {
         // Emit compressed metadata object.
         let metadata_cgu_name =
-            cgu_name_builder.build_cgu_name(LOCAL_CRATE, &["crate"], Some("metadata")).to_string();
+            cgu_name_builder.build_cgu_name(LOCAL_CRATE, &["crate"], Some("metadata"));
         tcx.sess.time("write_compressed_metadata", || {
-            let file_name =
-                tcx.output_filenames(()).temp_path(OutputType::Metadata, Some(&metadata_cgu_name));
+            let file_name = tcx
+                .output_filenames(())
+                .temp_path(OutputType::Metadata, Some(metadata_cgu_name.as_str()));
             let data = create_compressed_metadata_file(
                 tcx.sess,
                 &metadata,
