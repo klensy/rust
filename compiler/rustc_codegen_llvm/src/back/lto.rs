@@ -19,6 +19,7 @@ use rustc_middle::dep_graph::WorkProduct;
 use rustc_middle::middle::exported_symbols::SymbolExportLevel;
 use rustc_session::cgu_reuse_tracker::CguReuse;
 use rustc_session::config::{self, CrateType, Lto};
+use rustc_span::Symbol;
 use tracing::{debug, info};
 
 use std::ffi::{CStr, CString};
@@ -200,7 +201,7 @@ pub(crate) fn run_thin(
 }
 
 pub(crate) fn prepare_thin(module: ModuleCodegen<ModuleLlvm>) -> (String, ThinBuffer) {
-    let name = module.name.clone();
+    let name = module.name.to_string();
     let buffer = ThinBuffer::new(module.module_llvm.llmod());
     (name, buffer)
 }
@@ -272,9 +273,12 @@ fn fat_lto(
             assert!(!serialized_modules.is_empty(), "must have at least one serialized module");
             let (buffer, name) = serialized_modules.remove(0);
             info!("no in-memory regular modules to choose from, parsing {:?}", name);
+            //FIXME: remove interning?
+            let symbol_name = name.clone().into_string().unwrap();
+            let symbol_name = Symbol::intern(&symbol_name);
             ModuleCodegen {
                 module_llvm: ModuleLlvm::parse(cgcx, &name, buffer.data(), diag_handler)?,
-                name: name.into_string().unwrap(),
+                name: symbol_name,
                 kind: ModuleKind::Regular,
             }
         }
@@ -299,7 +303,7 @@ fn fat_lto(
         // them later. Not great but hey, that's why it's "fat" LTO, right?
         for module in in_memory {
             let buffer = ModuleBuffer::new(module.module_llvm.llmod());
-            let llmod_id = CString::new(&module.name[..]).unwrap();
+            let llmod_id = CString::new(module.name.as_str()).unwrap();
             serialized_modules.push((SerializedModule::Local(buffer), llmod_id));
         }
         // Sort the modules to ensure we produce deterministic results.
@@ -334,7 +338,7 @@ fn fat_lto(
         unsafe { llvm::LLVMRustLTOGetDICompileUnit(llmod, &mut cu1, &mut cu2) };
         if !cu2.is_null() {
             let _timer =
-                cgcx.prof.generic_activity_with_arg("LLVM_fat_lto_patch_debuginfo", &*module.name);
+                cgcx.prof.generic_activity_with_arg("LLVM_fat_lto_patch_debuginfo", module.name.as_str());
             unsafe { llvm::LLVMRustLTOPatchDICompileUnit(llmod, cu1) };
             save_temp_bitcode(cgcx, &module, "fat-lto-after-patch");
         }
@@ -580,7 +584,7 @@ pub(crate) fn run_pass_manager(
     config: &ModuleConfig,
     thin: bool,
 ) -> Result<(), FatalError> {
-    let _timer = cgcx.prof.extra_verbose_generic_activity("LLVM_lto_optimize", &*module.name);
+    let _timer = cgcx.prof.extra_verbose_generic_activity("LLVM_lto_optimize", module.name.as_str());
 
     // Now we have one massive module inside of llmod. Time to run the
     // LTO-specific optimization passes that LLVM provides.
@@ -741,9 +745,12 @@ pub unsafe fn optimize_thin_module(
     // that LLVM Context and Module.
     let llcx = llvm::LLVMRustContextCreate(cgcx.fewer_names);
     let llmod_raw = parse_module(llcx, module_name, thin_module.data(), &diag_handler)? as *const _;
+    //FIXME: remove intern?
+    let symbol_name = Symbol::intern(thin_module.name());
+
     let module = ModuleCodegen {
         module_llvm: ModuleLlvm { llmod_raw, llcx, tm },
-        name: thin_module.name().to_string(),
+        name: symbol_name,
         kind: ModuleKind::Regular,
     };
     {

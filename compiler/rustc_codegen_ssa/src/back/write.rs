@@ -679,7 +679,7 @@ impl<B: WriteBackendMethods> WorkItem<B> {
     fn start_profiling<'a>(&self, cgcx: &'a CodegenContext<B>) -> TimingGuard<'a> {
         match *self {
             WorkItem::Optimize(ref m) => {
-                cgcx.prof.generic_activity_with_arg("codegen_module_optimize", &*m.name)
+                cgcx.prof.generic_activity_with_arg("codegen_module_optimize", m.name.as_str())
             }
             WorkItem::CopyPostLtoArtifacts(ref m) => cgcx.prof.generic_activity_with_arg(
                 "codegen_copy_artifacts_from_incr_cache",
@@ -815,7 +815,7 @@ fn execute_optimize_work_item<B: ExtraBackendMethods>(
     // If we're doing some form of incremental LTO then we need to be sure to
     // save our module to disk first.
     let bitcode = if cgcx.config(module.kind).emit_pre_lto_bc {
-        let filename = pre_lto_bitcode_filename(&module.name);
+        let filename = pre_lto_bitcode_filename(module.name.as_str());
         cgcx.incr_comp_session_dir.as_ref().map(|path| path.join(&filename))
     } else {
         None

@@ -129,7 +129,7 @@ pub fn compile_codegen_unit(tcx: TyCtxt<'_>, cgu_name: Symbol) -> (ModuleCodegen
         }
 
         ModuleCodegen {
-            name: cgu_name.to_string(),
+            name: cgu_name,
             module_llvm: llvm_module,
             kind: ModuleKind::Regular,
         }

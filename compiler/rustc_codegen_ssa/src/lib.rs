@@ -55,7 +55,7 @@ pub struct ModuleCodegen<M> {
     /// something unique to this crate (e.g., a module path) as well
     /// as the crate name and disambiguator.
     /// We currently generate these names via CodegenUnit::build_cgu_name().
-    pub name: String,
+    pub name: Symbol,
     pub module_llvm: M,
     pub kind: ModuleKind,
 }
@@ -71,13 +71,12 @@ impl<M> ModuleCodegen<M> {
         emit_bc: bool,
         outputs: &OutputFilenames,
     ) -> CompiledModule {
-        let object = emit_obj.then(|| outputs.temp_path(OutputType::Object, Some(&self.name)));
-        let dwarf_object = emit_dwarf_obj.then(|| outputs.temp_path_dwo(Some(&self.name)));
-        let bytecode = emit_bc.then(|| outputs.temp_path(OutputType::Bitcode, Some(&self.name)));
+        let name = self.name.as_str();
+        let object = emit_obj.then(|| outputs.temp_path(OutputType::Object, Some(name)));
+        let dwarf_object = emit_dwarf_obj.then(|| outputs.temp_path_dwo(Some(name)));
+        let bytecode = emit_bc.then(|| outputs.temp_path(OutputType::Bitcode, Some(name)));
 
-        //FIXME: remove interning?
-        let cgu_name = Symbol::intern(&self.name);
-        CompiledModule { name: cgu_name, kind: self.kind, object, dwarf_object, bytecode }
+        CompiledModule { name: self.name, kind: self.kind, object, dwarf_object, bytecode }
     }
 }
 

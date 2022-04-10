@@ -228,7 +228,7 @@ impl WriteBackendMethods for LlvmCodegenBackend {
         back::lto::prepare_thin(module)
     }
     fn serialize_module(module: ModuleCodegen<Self::Module>) -> (String, Self::ModuleBuffer) {
-        (module.name, back::lto::ModuleBuffer::new(module.module_llvm.llmod()))
+        (module.name.to_string(), back::lto::ModuleBuffer::new(module.module_llvm.llmod()))
     }
     fn run_lto_pass_manager(
         cgcx: &CodegenContext<Self>,

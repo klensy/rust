@@ -262,7 +262,7 @@ pub(crate) fn save_temp_bitcode(
     }
     unsafe {
         let ext = format!("{}.bc", name);
-        let cgu = Some(&module.name[..]);
+        let cgu = Some(module.name.as_str());
         let path = cgcx.output_filenames.temp_path_ext(&ext, cgu);
         let cstr = path_to_c_string(&path);
         let llmod = module.module_llvm.llmod();
@@ -513,15 +513,14 @@ pub(crate) unsafe fn optimize(
     module: &ModuleCodegen<ModuleLlvm>,
     config: &ModuleConfig,
 ) -> Result<(), FatalError> {
-    let _timer = cgcx.prof.generic_activity_with_arg("LLVM_module_optimize", &*module.name);
+    let _timer = cgcx.prof.generic_activity_with_arg("LLVM_module_optimize", module.name.as_str());
 
     let llmod = module.module_llvm.llmod();
     let llcx = &*module.module_llvm.llcx;
     let tm = &*module.module_llvm.tm;
     let _handlers = DiagnosticHandlers::new(cgcx, diag_handler, llcx);
 
-    let module_name = module.name.clone();
-    let module_name = Some(&module_name[..]);
+    let module_name = Some(module.name.as_str());
 
     if config.emit_no_opt_bc {
         let out = cgcx.output_filenames.temp_path_ext("no-opt.bc", module_name);
@@ -669,14 +668,14 @@ pub(crate) unsafe fn optimize(
         {
             let _timer = cgcx.prof.extra_verbose_generic_activity(
                 "LLVM_module_optimize_function_passes",
-                &*module.name,
+                module.name.as_str(),
             );
             llvm::LLVMRustRunFunctionPassManager(fpm, llmod);
         }
         {
             let _timer = cgcx.prof.extra_verbose_generic_activity(
                 "LLVM_module_optimize_module_passes",
-                &*module.name,
+                module.name.as_str(),
             );
             llvm::LLVMRunPassManager(mpm, llmod);
         }
@@ -715,7 +714,7 @@ pub(crate) fn link(
 ) -> Result<ModuleCodegen<ModuleLlvm>, FatalError> {
     use super::lto::{Linker, ModuleBuffer};
     // Sort the modules by name to ensure to ensure deterministic behavior.
-    modules.sort_by(|a, b| a.name.cmp(&b.name));
+    modules.sort_by(|a, b| a.name.as_str().cmp(&b.name.as_str()));
     let (first, elements) =
         modules.split_first().expect("Bug! modules must contain at least one module.");
 
@@ -739,13 +738,12 @@ pub(crate) unsafe fn codegen(
     module: ModuleCodegen<ModuleLlvm>,
     config: &ModuleConfig,
 ) -> Result<CompiledModule, FatalError> {
-    let _timer = cgcx.prof.generic_activity_with_arg("LLVM_module_codegen", &*module.name);
+    let _timer = cgcx.prof.generic_activity_with_arg("LLVM_module_codegen", module.name.as_str());
     {
         let llmod = module.module_llvm.llmod();
         let llcx = &*module.module_llvm.llcx;
         let tm = &*module.module_llvm.tm;
-        let module_name = module.name.clone();
-        let module_name = Some(&module_name[..]);
+        let module_name = Some(module.name.as_str());
         let handlers = DiagnosticHandlers::new(cgcx, diag_handler, llcx);
 
         if cgcx.msvc_imps_needed {
@@ -788,7 +786,7 @@ pub(crate) unsafe fn codegen(
         if config.bitcode_needed() {
             let _timer = cgcx
                 .prof
-                .generic_activity_with_arg("LLVM_module_codegen_make_bitcode", &*module.name);
+                .generic_activity_with_arg("LLVM_module_codegen_make_bitcode", module.name.as_str());
             let thin = ThinBuffer::new(llmod);
             let data = thin.data();
 
@@ -803,7 +801,7 @@ pub(crate) unsafe fn codegen(
             if config.emit_bc || config.emit_obj == EmitObj::Bitcode {
                 let _timer = cgcx
                     .prof
-                    .generic_activity_with_arg("LLVM_module_codegen_emit_bitcode", &*module.name);
+                    .generic_activity_with_arg("LLVM_module_codegen_emit_bitcode", module.name.as_str());
                 if let Err(e) = fs::write(&bc_out, data) {
                     let msg = format!("failed to write bytecode to {}: {}", bc_out.display(), e);
                     diag_handler.err(&msg);
@@ -813,14 +811,14 @@ pub(crate) unsafe fn codegen(
             if config.emit_obj == EmitObj::ObjectCode(BitcodeSection::Full) {
                 let _timer = cgcx
                     .prof
-                    .generic_activity_with_arg("LLVM_module_codegen_embed_bitcode", &*module.name);
+                    .generic_activity_with_arg("LLVM_module_codegen_embed_bitcode", module.name.as_str());
                 embed_bitcode(cgcx, llcx, llmod, &config.bc_cmdline, data);
             }
         }
 
         if config.emit_ir {
             let _timer =
-                cgcx.prof.generic_activity_with_arg("LLVM_module_codegen_emit_ir", &*module.name);
+                cgcx.prof.generic_activity_with_arg("LLVM_module_codegen_emit_ir", module.name.as_str());
             let out = cgcx.output_filenames.temp_path(OutputType::LlvmAssembly, module_name);
             let out_c = path_to_c_string(&out);
 
@@ -864,7 +862,7 @@ pub(crate) unsafe fn codegen(
 
         if config.emit_asm {
             let _timer =
-                cgcx.prof.generic_activity_with_arg("LLVM_module_codegen_emit_asm", &*module.name);
+                cgcx.prof.generic_activity_with_arg("LLVM_module_codegen_emit_asm", module.name.as_str());
             let path = cgcx.output_filenames.temp_path(OutputType::Assembly, module_name);
 
             // We can't use the same module for asm and object code output,
@@ -894,7 +892,7 @@ pub(crate) unsafe fn codegen(
             EmitObj::ObjectCode(_) => {
                 let _timer = cgcx
                     .prof
-                    .generic_activity_with_arg("LLVM_module_codegen_emit_obj", &*module.name);
+                    .generic_activity_with_arg("LLVM_module_codegen_emit_obj", module.name.as_str());
 
                 let dwo_out = cgcx.output_filenames.temp_path_dwo(module_name);
                 let dwo_out = match (cgcx.split_debuginfo, cgcx.split_dwarf_kind) {

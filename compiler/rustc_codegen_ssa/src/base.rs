@@ -575,13 +575,13 @@ pub fn codegen_crate<B: ExtraBackendMethods>(
         None
     } else if let Some(kind) = tcx.allocator_kind(()) {
         let llmod_id =
-            cgu_name_builder.build_cgu_name(LOCAL_CRATE, &["crate"], Some("allocator")).to_string();
-        let mut module_llvm = backend.new_metadata(tcx, &llmod_id);
+            cgu_name_builder.build_cgu_name(LOCAL_CRATE, &["crate"], Some("allocator"));
+        let mut module_llvm = backend.new_metadata(tcx, llmod_id.as_str());
         tcx.sess.time("write_allocator_module", || {
             backend.codegen_allocator(
                 tcx,
                 &mut module_llvm,
-                &llmod_id,
+                llmod_id.as_str(),
                 kind,
                 tcx.lang_items().oom().is_some(),
             )
