@@ -390,13 +390,9 @@ fn generate_lto_work<B: ExtraBackendMethods>(
             (WorkItem::LTO(module), cost)
         })
         .chain(copy_jobs.into_iter().map(|wp| {
-            (
-                WorkItem::CopyPostLtoArtifacts(CachedModuleCodegen {
-                    name: wp.cgu_name.clone(),
-                    source: wp,
-                }),
-                0,
-            )
+            // FIXME: remove interning later?
+            let cgu_name = rustc_span::Symbol::intern(&wp.cgu_name);
+            (WorkItem::CopyPostLtoArtifacts(CachedModuleCodegen { name: cgu_name, source: wp }), 0)
         }))
         .collect()
 }
@@ -685,9 +681,10 @@ impl<B: WriteBackendMethods> WorkItem<B> {
             WorkItem::Optimize(ref m) => {
                 cgcx.prof.generic_activity_with_arg("codegen_module_optimize", &*m.name)
             }
-            WorkItem::CopyPostLtoArtifacts(ref m) => cgcx
-                .prof
-                .generic_activity_with_arg("codegen_copy_artifacts_from_incr_cache", &*m.name),
+            WorkItem::CopyPostLtoArtifacts(ref m) => cgcx.prof.generic_activity_with_arg(
+                "codegen_copy_artifacts_from_incr_cache",
+                m.name.as_str(),
+            ),
             WorkItem::LTO(ref m) => {
                 cgcx.prof.generic_activity_with_arg("codegen_module_perform_lto", m.name())
             }
@@ -856,7 +853,8 @@ fn execute_copy_from_cache_work_item<B: ExtraBackendMethods>(
     let incr_comp_session_dir = cgcx.incr_comp_session_dir.as_ref().unwrap();
     let mut object = None;
     if let Some(saved_file) = module.source.saved_file {
-        let obj_out = cgcx.output_filenames.temp_path(OutputType::Object, Some(&module.name));
+        let obj_out =
+            cgcx.output_filenames.temp_path(OutputType::Object, Some(module.name.as_str()));
         object = Some(obj_out.clone());
         let source_file = in_incr_comp_dir(&incr_comp_session_dir, &saved_file);
         debug!(
@@ -879,7 +877,7 @@ fn execute_copy_from_cache_work_item<B: ExtraBackendMethods>(
     assert_eq!(object.is_some(), module_config.emit_obj != EmitObj::None);
 
     WorkItemResult::Compiled(CompiledModule {
-        name: module.name,
+        name: module.name.to_string(),
         kind: ModuleKind::Regular,
         object,
         dwarf_object: None,
@@ -1935,7 +1933,7 @@ pub fn submit_pre_lto_module_to_llvm<B: ExtraBackendMethods>(
     tx_to_llvm_workers: &Sender<Box<dyn Any + Send>>,
     module: CachedModuleCodegen,
 ) {
-    let filename = pre_lto_bitcode_filename(&module.name);
+    let filename = pre_lto_bitcode_filename(module.name.as_str());
     let bc_path = in_incr_comp_dir_sess(tcx.sess, &filename);
     let file = fs::File::open(&bc_path)
         .unwrap_or_else(|e| panic!("failed to open bitcode file `{}`: {}", bc_path.display(), e));

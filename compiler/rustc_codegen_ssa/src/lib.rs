@@ -89,7 +89,7 @@ pub struct CompiledModule {
 }
 
 pub struct CachedModuleCodegen {
-    pub name: String,
+    pub name: Symbol,
     pub source: WorkProduct,
 }
 

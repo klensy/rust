@@ -705,10 +705,7 @@ pub fn codegen_crate<B: ExtraBackendMethods>(
                     &backend,
                     tcx,
                     &ongoing_codegen.coordinator_send,
-                    CachedModuleCodegen {
-                        name: cgu.name().to_string(),
-                        source: cgu.work_product(tcx),
-                    },
+                    CachedModuleCodegen { name: cgu.name(), source: cgu.work_product(tcx) },
                 );
                 true
             }
@@ -716,10 +713,7 @@ pub fn codegen_crate<B: ExtraBackendMethods>(
                 submit_post_lto_module_to_llvm(
                     &backend,
                     &ongoing_codegen.coordinator_send,
-                    CachedModuleCodegen {
-                        name: cgu.name().to_string(),
-                        source: cgu.work_product(tcx),
-                    },
+                    CachedModuleCodegen { name: cgu.name(), source: cgu.work_product(tcx) },
                 );
                 true
             }
