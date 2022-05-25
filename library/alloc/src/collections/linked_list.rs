@@ -352,7 +352,7 @@ impl<T> LinkedList<T> {
 
             first_part
         } else {
-            mem::replace(self, LinkedList::new())
+            mem::take(self)
         }
     }
 
@@ -392,7 +392,7 @@ impl<T> LinkedList<T> {
 
             second_part
         } else {
-            mem::replace(self, LinkedList::new())
+            mem::take(self)
         }
     }
 }
@@ -554,7 +554,7 @@ impl<T> LinkedList<T> {
     #[must_use]
     #[unstable(feature = "linked_list_cursors", issue = "58533")]
     pub fn cursor_back(&self) -> Cursor<'_, T> {
-        Cursor { index: self.len.checked_sub(1).unwrap_or(0), current: self.tail, list: self }
+        Cursor { index: self.len.saturating_sub(1), current: self.tail, list: self }
     }
 
     /// Provides a cursor with editing operations at the back element.
@@ -564,7 +564,7 @@ impl<T> LinkedList<T> {
     #[must_use]
     #[unstable(feature = "linked_list_cursors", issue = "58533")]
     pub fn cursor_back_mut(&mut self) -> CursorMut<'_, T> {
-        CursorMut { index: self.len.checked_sub(1).unwrap_or(0), current: self.tail, list: self }
+        CursorMut { index: self.len.saturating_sub(1), current: self.tail, list: self }
     }
 
     /// Returns `true` if the `LinkedList` is empty.
@@ -1229,7 +1229,7 @@ impl<'a, T> Cursor<'a, T> {
             // No current. We're at the start of the list. Yield None and jump to the end.
             None => {
                 self.current = self.list.tail;
-                self.index = self.list.len().checked_sub(1).unwrap_or(0);
+                self.index = self.list.len().saturating_sub(1);
             }
             // Have a prev. Yield it and go to the previous element.
             Some(current) => unsafe {
@@ -1346,7 +1346,7 @@ impl<'a, T> CursorMut<'a, T> {
             // No current. We're at the start of the list. Yield None and jump to the end.
             None => {
                 self.current = self.list.tail;
-                self.index = self.list.len().checked_sub(1).unwrap_or(0);
+                self.index = self.list.len().saturating_sub(1);
             }
             // Have a prev. Yield it and go to the previous element.
             Some(current) => unsafe {

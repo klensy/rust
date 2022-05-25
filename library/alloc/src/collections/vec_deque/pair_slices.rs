@@ -1,5 +1,5 @@
 use core::cmp::{self};
-use core::mem::replace;
+use core::mem;
 
 use crate::alloc::Allocator;
 
@@ -50,17 +50,17 @@ impl<'a, 'b, T> Iterator for PairSlices<'a, 'b, T> {
         if part == 0 {
             return None;
         }
-        let (p0, p1) = replace(&mut self.a0, &mut []).split_at_mut(part);
+        let (p0, p1) = mem::take(&mut self.a0).split_at_mut(part);
         let (q0, q1) = self.b0.split_at(part);
 
         // Move a1 into a0, if it's empty (and b1, b0 the same way).
         self.a0 = p1;
         self.b0 = q1;
         if self.a0.is_empty() {
-            self.a0 = replace(&mut self.a1, &mut []);
+            self.a0 = mem::take(&mut self.a1);
         }
         if self.b0.is_empty() {
-            self.b0 = replace(&mut self.b1, &[]);
+            self.b0 = mem::take(&mut self.b1);
         }
         Some((p0, q0))
     }

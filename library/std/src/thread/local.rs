@@ -1077,7 +1077,7 @@ pub mod os {
             if ptr.addr() > 1 {
                 // SAFETY: the check ensured the pointer is safe (its destructor
                 // is not running) + it is coming from a trusted source (self).
-                if let Some(ref value) = unsafe { (*ptr).inner.get() } {
+                if let Some(value) = unsafe { (*ptr).inner.get() } {
                     return Some(value);
                 }
             }

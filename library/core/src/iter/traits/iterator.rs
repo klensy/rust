@@ -3711,7 +3711,7 @@ pub trait Iterator {
             mut compare: impl FnMut(&T, &T) -> Option<Ordering> + 'a,
         ) -> impl FnMut(T) -> bool + 'a {
             move |curr| {
-                if let Some(Ordering::Greater) | None = compare(&last, &curr) {
+                if let Some(Ordering::Greater) | None = compare(last, &curr) {
                     return false;
                 }
                 *last = curr;

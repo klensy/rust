@@ -370,7 +370,7 @@ impl<'a, T: 'a, P: FnMut(&T) -> bool> Split<'a, T, P> {
     /// ```
     #[unstable(feature = "split_as_slice", issue = "96137")]
     pub fn as_slice(&self) -> &'a [T] {
-        if self.finished { &[] } else { &self.v }
+        if self.finished { &[] } else { self.v }
     }
 }
 
@@ -644,7 +644,7 @@ where
             None
         } else {
             self.finished = true;
-            Some(mem::replace(&mut self.v, &mut []))
+            Some(mem::take(&mut self.v))
         }
     }
 }
@@ -670,7 +670,7 @@ where
         match idx_opt {
             None => self.finish(),
             Some(idx) => {
-                let tmp = mem::replace(&mut self.v, &mut []);
+                let tmp = mem::take(&mut self.v);
                 let (head, tail) = tmp.split_at_mut(idx);
                 self.v = &mut tail[1..];
                 Some(head)
@@ -709,7 +709,7 @@ where
         match idx_opt {
             None => self.finish(),
             Some(idx) => {
-                let tmp = mem::replace(&mut self.v, &mut []);
+                let tmp = mem::take(&mut self.v);
                 let (head, tail) = tmp.split_at_mut(idx);
                 self.v = head;
                 Some(&mut tail[1..])
@@ -790,7 +790,7 @@ where
         if idx == self.v.len() {
             self.finished = true;
         }
-        let tmp = mem::replace(&mut self.v, &mut []);
+        let tmp = mem::take(&mut self.v);
         let (head, tail) = tmp.split_at_mut(idx);
         self.v = tail;
         Some(head)
@@ -836,7 +836,7 @@ where
         if idx == 0 {
             self.finished = true;
         }
-        let tmp = mem::replace(&mut self.v, &mut []);
+        let tmp = mem::take(&mut self.v);
         let (head, tail) = tmp.split_at_mut(idx);
         self.v = head;
         Some(tail)
@@ -1602,7 +1602,7 @@ impl<'a, T> Iterator for ChunksMut<'a, T> {
             None
         } else {
             let sz = cmp::min(self.v.len(), self.chunk_size);
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (head, tail) = tmp.split_at_mut(sz);
             self.v = tail;
             Some(head)
@@ -1637,7 +1637,7 @@ impl<'a, T> Iterator for ChunksMut<'a, T> {
                 Some(sum) => cmp::min(self.v.len(), sum),
                 None => self.v.len(),
             };
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (head, tail) = tmp.split_at_mut(end);
             let (_, nth) = head.split_at_mut(start);
             self.v = tail;
@@ -1679,7 +1679,7 @@ impl<'a, T> DoubleEndedIterator for ChunksMut<'a, T> {
         } else {
             let remainder = self.v.len() % self.chunk_size;
             let sz = if remainder != 0 { remainder } else { self.chunk_size };
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let tmp_len = tmp.len();
             // SAFETY: Similar to `Chunks::next_back`
             let (head, tail) = unsafe { tmp.split_at_mut_unchecked(tmp_len - sz) };
@@ -1700,7 +1700,7 @@ impl<'a, T> DoubleEndedIterator for ChunksMut<'a, T> {
                 Some(res) => cmp::min(self.v.len(), res),
                 None => self.v.len(),
             };
-            let (temp, _tail) = mem::replace(&mut self.v, &mut []).split_at_mut(end);
+            let (temp, _tail) = mem::take(&mut self.v).split_at_mut(end);
             let (head, nth_back) = temp.split_at_mut(start);
             self.v = head;
             Some(nth_back)
@@ -1943,7 +1943,7 @@ impl<'a, T> Iterator for ChunksExactMut<'a, T> {
         if self.v.len() < self.chunk_size {
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (head, tail) = tmp.split_at_mut(self.chunk_size);
             self.v = tail;
             Some(head)
@@ -1968,7 +1968,7 @@ impl<'a, T> Iterator for ChunksExactMut<'a, T> {
             self.v = &mut [];
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (_, snd) = tmp.split_at_mut(start);
             self.v = snd;
             self.next()
@@ -1994,7 +1994,7 @@ impl<'a, T> DoubleEndedIterator for ChunksExactMut<'a, T> {
         if self.v.len() < self.chunk_size {
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let tmp_len = tmp.len();
             let (head, tail) = tmp.split_at_mut(tmp_len - self.chunk_size);
             self.v = head;
@@ -2011,7 +2011,7 @@ impl<'a, T> DoubleEndedIterator for ChunksExactMut<'a, T> {
         } else {
             let start = (len - 1 - n) * self.chunk_size;
             let end = start + self.chunk_size;
-            let (temp, _tail) = mem::replace(&mut self.v, &mut []).split_at_mut(end);
+            let (temp, _tail) = mem::take(&mut self.v).split_at_mut(end);
             let (head, nth_back) = temp.split_at_mut(start);
             self.v = head;
             Some(nth_back)
@@ -2619,7 +2619,7 @@ impl<'a, T> Iterator for RChunksMut<'a, T> {
             None
         } else {
             let sz = cmp::min(self.v.len(), self.chunk_size);
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let tmp_len = tmp.len();
             // SAFETY: split_at_mut_unchecked just requires the argument be less
             // than the length. This could only happen if the expression
@@ -2662,7 +2662,7 @@ impl<'a, T> Iterator for RChunksMut<'a, T> {
                 Some(sum) => sum,
                 None => 0,
             };
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (head, tail) = tmp.split_at_mut(start);
             let (nth, _) = tail.split_at_mut(end - start);
             self.v = head;
@@ -2702,7 +2702,7 @@ impl<'a, T> DoubleEndedIterator for RChunksMut<'a, T> {
         } else {
             let remainder = self.v.len() % self.chunk_size;
             let sz = if remainder != 0 { remainder } else { self.chunk_size };
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             // SAFETY: Similar to `Chunks::next_back`
             let (head, tail) = unsafe { tmp.split_at_mut_unchecked(sz) };
             self.v = tail;
@@ -2721,7 +2721,7 @@ impl<'a, T> DoubleEndedIterator for RChunksMut<'a, T> {
             let offset_from_end = (len - 1 - n) * self.chunk_size;
             let end = self.v.len() - offset_from_end;
             let start = end.saturating_sub(self.chunk_size);
-            let (tmp, tail) = mem::replace(&mut self.v, &mut []).split_at_mut(end);
+            let (tmp, tail) = mem::take(&mut self.v).split_at_mut(end);
             let (_, nth_back) = tmp.split_at_mut(start);
             self.v = tail;
             Some(nth_back)
@@ -2967,7 +2967,7 @@ impl<'a, T> Iterator for RChunksExactMut<'a, T> {
         if self.v.len() < self.chunk_size {
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let tmp_len = tmp.len();
             let (head, tail) = tmp.split_at_mut(tmp_len - self.chunk_size);
             self.v = head;
@@ -2993,7 +2993,7 @@ impl<'a, T> Iterator for RChunksExactMut<'a, T> {
             self.v = &mut [];
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let tmp_len = tmp.len();
             let (fst, _) = tmp.split_at_mut(tmp_len - end);
             self.v = fst;
@@ -3021,7 +3021,7 @@ impl<'a, T> DoubleEndedIterator for RChunksExactMut<'a, T> {
         if self.v.len() < self.chunk_size {
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (head, tail) = tmp.split_at_mut(self.chunk_size);
             self.v = tail;
             Some(head)
@@ -3040,7 +3040,7 @@ impl<'a, T> DoubleEndedIterator for RChunksExactMut<'a, T> {
             let offset = (len - n) * self.chunk_size;
             let start = self.v.len() - offset;
             let end = start + self.chunk_size;
-            let (tmp, tail) = mem::replace(&mut self.v, &mut []).split_at_mut(end);
+            let (tmp, tail) = mem::take(&mut self.v).split_at_mut(end);
             let (_, nth_back) = tmp.split_at_mut(start);
             self.v = tail;
             Some(nth_back)

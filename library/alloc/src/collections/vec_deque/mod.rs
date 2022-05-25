@@ -122,7 +122,7 @@ impl<T: Clone, A: Allocator + Clone> Clone for VecDeque<T, A> {
 
         let mut iter = PairSlices::from(self, other);
         while let Some((dst, src)) = iter.next() {
-            dst.clone_from_slice(&src);
+            dst.clone_from_slice(src);
         }
 
         if iter.has_remainder() {

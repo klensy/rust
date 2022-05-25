@@ -253,7 +253,7 @@ mod tests;
 
 use crate::cmp;
 use crate::fmt;
-use crate::mem::replace;
+use crate::mem;
 use crate::ops::{Deref, DerefMut};
 use crate::slice;
 use crate::str;
@@ -1153,7 +1153,7 @@ impl<'a> IoSliceMut<'a> {
             }
         }
 
-        *bufs = &mut replace(bufs, &mut [])[remove..];
+        *bufs = &mut mem::take(bufs)[remove..];
         if !bufs.is_empty() {
             bufs[0].advance(n - accumulated_len)
         }
@@ -1287,7 +1287,7 @@ impl<'a> IoSlice<'a> {
             }
         }
 
-        *bufs = &mut replace(bufs, &mut [])[remove..];
+        *bufs = &mut mem::take(bufs)[remove..];
         if !bufs.is_empty() {
             bufs[0].advance(n - accumulated_len)
         }

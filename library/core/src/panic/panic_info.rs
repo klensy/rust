@@ -127,7 +127,7 @@ impl<'a> PanicInfo<'a> {
     pub fn location(&self) -> Option<&Location<'_>> {
         // NOTE: If this is changed to sometimes return None,
         // deal with that case in std::panicking::default_hook and core::panicking::panic_fmt.
-        Some(&self.location)
+        Some(self.location)
     }
 
     /// Returns whether the panic handler is allowed to unwind the stack from

@@ -854,7 +854,7 @@ impl fmt::Display for Error {
                 let detail = sys::os::error_string(code);
                 write!(fmt, "{detail} (os error {code})")
             }
-            ErrorData::Custom(ref c) => c.error.fmt(fmt),
+            ErrorData::Custom(c) => c.error.fmt(fmt),
             ErrorData::Simple(kind) => write!(fmt, "{}", kind.as_str()),
             ErrorData::SimpleMessage(msg) => msg.message.fmt(fmt),
         }

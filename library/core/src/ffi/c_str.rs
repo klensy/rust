@@ -529,13 +529,13 @@ impl Eq for CStr {}
 #[stable(feature = "rust1", since = "1.0.0")]
 impl PartialOrd for CStr {
     fn partial_cmp(&self, other: &CStr) -> Option<Ordering> {
-        self.to_bytes().partial_cmp(&other.to_bytes())
+        self.to_bytes().partial_cmp(other.to_bytes())
     }
 }
 #[stable(feature = "rust1", since = "1.0.0")]
 impl Ord for CStr {
     fn cmp(&self, other: &CStr) -> Ordering {
-        self.to_bytes().cmp(&other.to_bytes())
+        self.to_bytes().cmp(other.to_bytes())
     }
 }
 

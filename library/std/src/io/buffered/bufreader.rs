@@ -326,7 +326,7 @@ impl<R: Read> Read for BufReader<R> {
     // delegate to the inner implementation.
     fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
         let nread = self.cap - self.pos;
-        buf.extend_from_slice(&self.buffer());
+        buf.extend_from_slice(self.buffer());
         self.discard_buffer();
         Ok(nread + self.inner.read_to_end(buf)?)
     }

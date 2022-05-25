@@ -185,7 +185,7 @@ impl<'a> Context<'a> {
     #[must_use]
     #[inline]
     pub fn waker(&self) -> &'a Waker {
-        &self.waker
+        self.waker
     }
 }
 

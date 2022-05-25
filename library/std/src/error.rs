@@ -1301,14 +1301,11 @@ where
     fn backtrace(&self) -> Option<&Backtrace> {
         // have to grab the backtrace on the first error directly since that error may not be
         // 'static
-        let backtrace = self.error.backtrace();
-        let backtrace = backtrace.or_else(|| {
+        self.error.backtrace().or_else(|| {
             self.error
                 .source()
-                .map(|source| source.chain().find_map(|source| source.backtrace()))
-                .flatten()
-        });
-        backtrace
+                .and_then(|source| source.chain().find_map(|source| source.backtrace()))
+        })
     }
 
     /// Format the report as a single line.
@@ -1367,14 +1364,11 @@ impl Report<Box<dyn Error>> {
     fn backtrace(&self) -> Option<&Backtrace> {
         // have to grab the backtrace on the first error directly since that error may not be
         // 'static
-        let backtrace = self.error.backtrace();
-        let backtrace = backtrace.or_else(|| {
+        self.error.backtrace().or_else(|| {
             self.error
                 .source()
-                .map(|source| source.chain().find_map(|source| source.backtrace()))
-                .flatten()
-        });
-        backtrace
+                .and_then(|source| source.chain().find_map(|source| source.backtrace()))
+        })
     }
 
     /// Format the report as a single line.

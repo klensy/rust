@@ -1457,10 +1457,10 @@ impl<'a> Formatter<'a> {
                 // here.
                 s.get(..i).unwrap_or(s)
             } else {
-                &s
+                s
             }
         } else {
-            &s
+            s
         };
         // The `width` field is more of a `min-width` parameter at this point.
         match self.width {
