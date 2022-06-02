@@ -421,11 +421,16 @@ impl<'a, 'tcx> HashStable<StableHashingContext<'a>> for CodegenUnit<'tcx> {
 pub struct CodegenUnitNameBuilder<'tcx> {
     tcx: TyCtxt<'tcx>,
     cache: FxHashMap<CrateNum, String>,
+    name_cache: String,
 }
 
 impl<'tcx> CodegenUnitNameBuilder<'tcx> {
     pub fn new(tcx: TyCtxt<'tcx>) -> Self {
-        CodegenUnitNameBuilder { tcx, cache: Default::default() }
+        CodegenUnitNameBuilder {
+            tcx,
+            cache: Default::default(),
+            name_cache: String::with_capacity(64),
+        }
     }
 
     /// CGU names should fulfill the following requirements:
@@ -481,7 +486,8 @@ impl<'tcx> CodegenUnitNameBuilder<'tcx> {
     {
         use std::fmt::Write;
 
-        let mut cgu_name = String::with_capacity(64);
+        self.name_cache.clear();
+        let cgu_name = &mut self.name_cache;
 
         // Start out with the crate name and disambiguator
         let tcx = self.tcx;
