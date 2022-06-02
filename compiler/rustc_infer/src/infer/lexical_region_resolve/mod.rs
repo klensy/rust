@@ -605,7 +605,7 @@ impl<'cx, 'tcx> LexicalResolver<'cx, 'tcx> {
     fn construct_graph(&self) -> RegionGraph<'tcx> {
         let num_vars = self.num_vars();
 
-        let mut graph = Graph::new();
+        let mut graph = Graph::with_capacity(num_vars + 2, self.data.constraints.len());
 
         for _ in 0..num_vars {
             graph.add_node(());
