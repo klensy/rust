@@ -3,6 +3,8 @@ use rustc_data_structures::sync::OnceCell;
 use rustc_index::bit_set::BitSet;
 use rustc_serialize as serialize;
 
+use smallvec::{smallvec, SmallVec};
+
 use super::*;
 
 /// Preorder traversal of a graph.
@@ -27,13 +29,13 @@ use super::*;
 pub struct Preorder<'a, 'tcx> {
     body: &'a Body<'tcx>,
     visited: BitSet<BasicBlock>,
-    worklist: Vec<BasicBlock>,
+    worklist: SmallVec<[BasicBlock; 1]>,
     root_is_start_block: bool,
 }
 
 impl<'a, 'tcx> Preorder<'a, 'tcx> {
     pub fn new(body: &'a Body<'tcx>, root: BasicBlock) -> Preorder<'a, 'tcx> {
-        let worklist = vec![root];
+        let worklist = smallvec![root];
 
         Preorder {
             body,
