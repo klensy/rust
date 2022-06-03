@@ -88,10 +88,13 @@ impl<'tcx> AssertModuleSource<'tcx> {
             return;
         }
 
-        let user_path = self.field(attr, sym::module).to_string();
-        let crate_name = self.tcx.crate_name(LOCAL_CRATE).to_string();
+        let user_path_sym = self.field(attr, sym::module);
+        let crate_name_sym = self.tcx.crate_name(LOCAL_CRATE);
 
-        if !user_path.starts_with(&crate_name) {
+        let user_path = user_path_sym.as_str();
+        let crate_name = crate_name_sym.as_str();
+
+        if !user_path.starts_with(crate_name) {
             let msg = format!(
                 "Found malformed codegen unit name `{}`. \
                 Codegen units names must always start with the name of the \
@@ -105,7 +108,7 @@ impl<'tcx> AssertModuleSource<'tcx> {
         let (user_path, cgu_special_suffix) = if let Some(index) = user_path.rfind('.') {
             (&user_path[..index], Some(&user_path[index + 1..]))
         } else {
-            (&user_path[..], None)
+            (user_path, None)
         };
 
         let mut iter = user_path.split('-');
@@ -113,11 +116,8 @@ impl<'tcx> AssertModuleSource<'tcx> {
         // Remove the crate name
         assert_eq!(iter.next().unwrap(), crate_name);
 
-        let cgu_path_components = iter.collect::<Vec<_>>();
-
         let cgu_name_builder = &mut CodegenUnitNameBuilder::new(self.tcx);
-        let cgu_name =
-            cgu_name_builder.build_cgu_name(LOCAL_CRATE, cgu_path_components, cgu_special_suffix);
+        let cgu_name = cgu_name_builder.build_cgu_name(LOCAL_CRATE, iter, cgu_special_suffix);
 
         debug!("mapping '{}' to cgu name '{}'", self.field(attr, sym::module), cgu_name);
 
@@ -138,7 +138,7 @@ impl<'tcx> AssertModuleSource<'tcx> {
 
         self.tcx.sess.cgu_reuse_tracker.set_expectation(
             cgu_name,
-            &user_path,
+            user_path,
             attr.span,
             expected_reuse,
             comp_kind,
