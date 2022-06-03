@@ -492,27 +492,25 @@ impl<'tcx> CodegenUnitNameBuilder<'tcx> {
         // Start out with the crate name and disambiguator
         let tcx = self.tcx;
         let crate_prefix = self.cache.entry(cnum).or_insert_with(|| {
+            let local_stable_crate_id = tcx.sess.local_stable_crate_id().to_u64() as u32;
+            // FIXME: default size?
+            let mut crate_prefix = String::with_capacity(10);
+            write!(crate_prefix, "{}.{:08x}", tcx.crate_name(cnum), local_stable_crate_id).unwrap();
+
             // Whenever the cnum is not LOCAL_CRATE we also mix in the
             // local crate's ID. Otherwise there can be collisions between CGUs
             // instantiating stuff for upstream crates.
-            let local_crate_id = if cnum != LOCAL_CRATE {
-                let local_stable_crate_id = tcx.sess.local_stable_crate_id();
-                format!(
+            if cnum != LOCAL_CRATE {
+                write!(
+                    crate_prefix,
                     "-in-{}.{:08x}",
                     tcx.crate_name(LOCAL_CRATE),
-                    local_stable_crate_id.to_u64() as u32,
+                    local_stable_crate_id,
                 )
-            } else {
-                String::new()
-            };
+                .unwrap();
+            }
 
-            let stable_crate_id = tcx.sess.local_stable_crate_id();
-            format!(
-                "{}.{:08x}{}",
-                tcx.crate_name(cnum),
-                stable_crate_id.to_u64() as u32,
-                local_crate_id,
-            )
+            crate_prefix
         });
 
         write!(cgu_name, "{}", crate_prefix).unwrap();
