@@ -40,7 +40,11 @@ pub fn assert_module_sources(tcx: TyCtxt<'_>) {
         let available_cgus =
             tcx.collect_and_partition_mono_items(()).1.iter().map(|cgu| cgu.name()).collect();
 
-        let ams = AssertModuleSource { tcx, available_cgus };
+        let mut ams = AssertModuleSource {
+            tcx,
+            available_cgus,
+            cgu_name_builder: CodegenUnitNameBuilder::new(tcx),
+        };
 
         for attr in tcx.hir().attrs(rustc_hir::CRATE_HIR_ID) {
             ams.check_attr(attr);
@@ -51,10 +55,11 @@ pub fn assert_module_sources(tcx: TyCtxt<'_>) {
 struct AssertModuleSource<'tcx> {
     tcx: TyCtxt<'tcx>,
     available_cgus: FxHashSet<Symbol>,
+    cgu_name_builder: CodegenUnitNameBuilder<'tcx>,
 }
 
 impl<'tcx> AssertModuleSource<'tcx> {
-    fn check_attr(&self, attr: &ast::Attribute) {
+    fn check_attr(&mut self, attr: &ast::Attribute) {
         let (expected_reuse, comp_kind) = if attr.has_name(sym::rustc_partition_reused) {
             (CguReuse::PreLto, ComparisonKind::AtLeast)
         } else if attr.has_name(sym::rustc_partition_codegened) {
@@ -116,8 +121,7 @@ impl<'tcx> AssertModuleSource<'tcx> {
         // Remove the crate name
         assert_eq!(iter.next().unwrap(), crate_name);
 
-        let cgu_name_builder = &mut CodegenUnitNameBuilder::new(self.tcx);
-        let cgu_name = cgu_name_builder.build_cgu_name(LOCAL_CRATE, iter, cgu_special_suffix);
+        let cgu_name = self.cgu_name_builder.build_cgu_name(LOCAL_CRATE, iter, cgu_special_suffix);
 
         debug!("mapping '{}' to cgu name '{}'", self.field(attr, sym::module), cgu_name);
 
