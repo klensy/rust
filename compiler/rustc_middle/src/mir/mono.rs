@@ -308,14 +308,14 @@ impl<'tcx> CodegenUnit<'tcx> {
         self.is_code_coverage_dead_code_cgu = true;
     }
 
-    pub fn mangle_name(human_readable_name: &str) -> String {
+    pub fn mangle_name(human_readable_name: &str, out_buf: &mut String) {
         // We generate a 80 bit hash from the name. This should be enough to
         // avoid collisions and is still reasonably short for filenames.
         let mut hasher = StableHasher::new();
         human_readable_name.hash(&mut hasher);
         let hash: u128 = hasher.finish();
         let hash = hash & ((1u128 << 80) - 1);
-        base_n::encode(hash, base_n::CASE_INSENSITIVE)
+        base_n::push_str(hash, base_n::CASE_INSENSITIVE, out_buf)
     }
 
     pub fn estimate_size(&mut self, tcx: TyCtxt<'tcx>) {
@@ -476,7 +476,10 @@ impl<'tcx> CodegenUnitNameBuilder<'tcx> {
         if self.tcx.sess.opts.unstable_opts.human_readable_cgu_names {
             cgu_name
         } else {
-            Symbol::intern(&CodegenUnit::mangle_name(cgu_name.as_str()))
+            // reuse String allocation
+            self.cgu_name_cache.clear();
+            CodegenUnit::mangle_name(cgu_name.as_str(), &mut self.cgu_name_cache);
+            Symbol::intern(&self.cgu_name_cache)
         }
     }
 
