@@ -259,11 +259,11 @@ fn handle_test_result(st: &mut ConsoleTestState, completed_test: CompletedTest) 
 // Handler for events that occur during test execution.
 // It is provided as a callback to the `run_tests` function.
 fn on_test_event(
-    event: &TestEvent,
+    event: TestEvent,
     st: &mut ConsoleTestState,
     out: &mut dyn OutputFormatter,
 ) -> io::Result<()> {
-    match (*event).clone() {
+    match event {
         TestEvent::TeFiltered(filtered_tests, shuffle_seed) => {
             st.total = filtered_tests;
             out.write_run_start(filtered_tests, shuffle_seed)?;
@@ -326,7 +326,7 @@ pub fn run_tests_console(opts: &TestOpts, tests: Vec<TestDescAndFn>) -> io::Resu
     let is_instant_supported = !cfg!(target_family = "wasm") && !cfg!(miri);
 
     let start_time = is_instant_supported.then(Instant::now);
-    run_tests(opts, tests, |x| on_test_event(&x, &mut st, &mut *out))?;
+    run_tests(opts, tests, |x| on_test_event(x, &mut st, &mut *out))?;
     st.exec_time = start_time.map(|t| TestSuiteExecTime(t.elapsed()));
 
     assert!(opts.fail_fast || st.current_test_count() == st.total);
